@@ -1,6 +1,6 @@
 name: "Zach Tatro | Portfolio"
 navbar:
-  title: "Portfolio"
+  title: "Zach Tatro | Portfolio"
   left:
     - text: "Home"
       href: index.html
