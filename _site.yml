@@ -8,6 +8,8 @@ navbar:
       menu:
         - text: "Project 1"
           href: Project_1.html
+        - text: "Matt Ryan Dome Analysis"
+          href: Matt_Ryan_Dome_Analysis.html
     - text: "Links"
       href: Links.html
 output_dir: "docs"
