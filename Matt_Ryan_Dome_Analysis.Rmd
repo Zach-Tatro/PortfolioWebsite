@@ -14,115 +14,217 @@ output:
 knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
 ```
 
-IMPORTANT: You can delete everything in here and start fresh. You might want to start by not deleting anything above this line until you know what that stuff is doing.
+***
 
-
-This is an .Rmd file. It is plain text with special features. Any time you write just like this, it will be compiled to normal text in the website. If you put a \# in front of your text, it will create a top level-header.
-
-# My first post
-
-2018 | 7 | 23 Last compiled: `r Sys.Date()`
-
-Notice that whatever you define as a top level header, automatically gets put into the table of contents bar on the left. 
-
-## Second level header
-
-You can add more headers by adding more hashtags. These won't be put into the table of contents
-
-### third level header
-
-Here's an even lower level header
-
-# My second post (note the order)
-
-2018 | 7 | 23 Last compiled: `r Sys.Date()`
-
-I'm writing this tutorial going from the top down. And, this is how it will be printed. So, notice the second post is second in the list. If you want your most recent post to be at the top, then make a new post starting at the top. If you want the oldest first, do, then keep adding to the bottom
-
-# Adding R stuff
-
-So far this is just a blog where you can write in plain text and serve your writing to a webpage. One of the main purposes of this lab journal is to record your progress learning R. The reason I am asking you to use this process is because you can both make a website, and a lab journal, and learn R all in R-studio. This makes everything really convenient and in the sam place. 
-
-So, let's say you are learning how to make a histogram in R. For example, maybe you want to sample 100 numbers from a normal distribution with mean = 0, and standard deviation =1, and then you want to plot a histogram. You can do this right here by using an r code block, like this:
-
-```{r}
-samples <- rnorm(100, mean=0, sd=1)
-hist(samples)
+```{r, echo=F, message=F, warning=F}
+# Load Necessary Libraries:
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+library(gtools)
+library(ggpubr)
 ```
 
-When you knit this R Markdown document, you will see that the histogram is printed to the page, along with the R code. This document can be set up to hide the R code in the webpage, just delete the comment (hashtag), from the cold folding option in the yaml header up top. For purposes of letting yourself see the code, and me see the code, best to keep it the way that it is. You learn all of these things and more can be customized in each R code block.
+https://www.pff.com/news/fantasy-football-96-stats-3-fantasy-football-stats-for-every-nfl-team-for-2019
 
-# The big idea
+***
 
-Use this lab journal to record what you do in R. This way I will be able to see what you are doing and help you along the way. You will also be creating a repository of all the things you do. You can make posts about everything. Learning specific things in R (project unrelated), and doing things for the project that we will discuss at the beginning of the Fall semester. You can get started now by fiddling around with googling things, and trying stuff out in R. I've placed some helpful starting links in the links page on this website
+# Introduction
 
-# What can you do right now by yourself?
+```{r, echo = F}
+Career <- read.csv("C:/Users/Zach/OneDrive/Analysis/Matt Ryan Career.csv")
+#head(Career)
 
-It's hard to learn programming when you don't have specific problems that you are trying to solve. Everything just seems abstract.
+# Relabel levels of Dome:
+levels(Career$Dome)[levels(Career$Dome) == "N"] <- "Outdoors"
+levels(Career$Dome)[levels(Career$Dome) == "Y"] <- "Indoors"
 
-I wrote an [introductory programming book that introduces R](https://crumplab.github.io/programmingforpsych/), and gives some [concrete problems for you to solve](https://crumplab.github.io/programmingforpsych/programming-challenges-i-learning-the-fundamentals.html). 
-
-To get the hang of journaling and solving the problems to learn programming, my suggestion is that you use this .Rmd file to solve the problems. It would look like this:
-
-# Problem 1
-
-Do simple math with numbers, addition, subtraction, multiplication, division
-
-```{r}
-1+2
-2*5
-5/3
-(1+6+4)/5
-
+# Relabel levels of Home:
+levels(Career$Home)[levels(Career$Home) == "A"] <- "Away"
+levels(Career$Home)[levels(Career$Home) == "H"] <- "Home"
 ```
 
-# Problem 2
 
-Put numbers into variables, do simple math on the variables
 
-```{r}
-a<-1
-b<-2
-a+b
+In a Pro Football Focus article "96 stats -- 3 fantasy football stats for every NFL team for 2019", Scott Barret compares Atlanta Falcons quarterback Matt Ryan's fantasy points when player indoors vs. outdoors. He says, 
 
-d<-c(1,2,3)
-e<-c(5,6,7)
-d+e
-d*e
-d/e
+>"[...] 2B. Throughout his career, 26 of Ryan's 37 highest-scoring fantasy games (70%) have come in a dome. Last year he averaged 23.8 fantasy points per game in a dome but only 20.1 fantasy points per game when playing outdoors. 2C. He plays outdoors in only three of 16 games this season."" 
 
+Although Barret doesn't expand on these stats, it's easy to decipher what he is implying. Matt Ryan's higher per game fantasy point average indoors for 2018, combined with his unique schedule in 2018, is reason to think Matt Ryan is a good draft pick for fantasy team owners in upcoming fantasy drafts. 
+
+Ryan's 2019 schedule is certainly unique. He doesn't play outdoors until week 11 at Carolina and only plays two games outdoors during a typical 16 week fantasy football season. At a glance, Barret's statement seems to hold some weight. More games indoors should result in more fantasy points. However, we're taking about 3.7 more points per game. Do we think that will make a big enough difference to matter? Lets dive into the data and see if we can find any evidence to conclude that Matt Ryan's schedule is a reason to move him up fantasy owner's draft boards.
+
+# 2018 Indoor VS. Outdoor
+
+Lets first visualize what we're investigating. Here is box plot of fantasy points from each game seperated by whether the game was played in an indoor or outdoor stadium.
+
+```{r, echo = F}
+# Subset dataset for 2018
+Year.2018 <- Career[Career$Year == "2018", ] 
+Year.2018$Dome <- factor(Year.2018$Dome)#, levels = c("Indoors", "Outdoors"))
+
+# Compute median:
+stat.2018 <- summarise(group_by(Year.2018, Dome),  med = round(median(Fant.Pts), 1), mean = round(mean(Fant.Pts), 1))
+
+# Box plot of 2018 game log by game setting:
+ggplot(Year.2018, aes(x = Dome, y = Fant.Pts, fill = Dome)) + 
+  geom_boxplot(show.legend = FALSE, fill = c("#a71930", "#000000"), color = c("#000000", "#000000")) + 
+  labs(title = "2018 Fantasy Points: Indoors vs. Outdoors", 
+       y = "Fantasy Points", 
+       x = "",
+       ) +
+  scale_x_discrete(labels = c("N" = "Outdoors", "Y" = "Indoors")) + 
+  geom_text(data = stat.2018, aes(x = Dome, 
+                                  y = mean, 
+                                  label = mean),
+            vjust = 1.2, 
+            hjust = -0.5,
+            color = c("white", "white")) +
+  annotate("text", label = "mean = ", 
+           x = levels(Year.2018$Dome) , 
+           y = stat.2018$mean, 
+           hjust = 0.8, 
+           vjust = 1.2,
+           color = c("white", "white")) + 
+  geom_segment(data = stat.2018, aes(x = c(0.6, 1.6), 
+                                     y = stat.2018$mean, 
+                                     xend = c(1.4, 2.4), 
+                                     yend = stat.2018$mean), 
+               linetype = "dashed", 
+               color = c("white", "white")) +
+  geom_segment(data = stat.2018, aes(x = c(0.6, 1.6), 
+                                     y = stat.2018$med, 
+                                     xend = c(1.4, 2.4), 
+                                     yend = stat.2018$med), 
+               color = c("white", "white"))
+
+# Add Falcon's colors to plot
+# maybe add n= below boxes or labels.
+# Fix original levels of Dome for next section. This will switch order and break the text here.
 ```
 
-# Problem 3
 
-Write code that will place the numbers 1 to 100 separately into a variable using for loop. Then, again using the seq function.
-
-```{r}
-# for loop solution
-# i becomes the number 1 to 100 at each step of the loop
+While the figure above might not be the most useful in terms of drawing a conclusion, it does give us an idea of what the data looks like. I believe the boxplot is most useful in picturing the variability of the data. We see that the variablity in fantasy scores from games played indoors is larger than the variability from games played outdoors. This could be important when deciding which test we use since we sometimes assume our data comes from groups with equal variance. 
 
 
-a <- length(100) # make empty variable, set length to 100
-for (i in 1:100){
-  a[i] <-i #assigns the number in i, to the ith index of a
+## The t-test:
+
+Let's formally test whether Matt Ryan really scored more fantasy points indoors than he did outdoors in 2018. Since we are comparing the means of two groups, a two-sample t-test seems to be the obvious choice. The two-sample t-test does come with some assumptions however. I won't go through all the assumptions but three of them are at least interesting enough to talk about. 
+
+1. **The data follow a normal probability distribution.** With such as small sample size (n = 16) it can be difficult to use a histogram of fantasy scores to see if our distribution looks atleast normal-ish. Luckily other methods exists like a QQ-norm plot and some statistical tests.
+
+```{r, echo = F}
+par(mfrow = c(1,2))
+ggqqplot(Year.2018$Fant.Pts)
+shapiro.test(Year.2018$Fant.Pts)
+```
+The QQ-norm plot compares the quantiles from our data to the theoretical quanitles your'd expect to see from a normal distribution. We see here that our points lie (roughly) on the line. We can also use the Shapiro-Wilk test to check the normality assumption. A large p-value here is a good thing. I think it is safe to assume normality.
+
+2. **Equal variance.** We saw before in our boxplot that we may have an issue with unequal variance between our groups. As a general rule, if the ratio of standard deviations is less than 2 (larger sd in the numerator), you're probably safe to assume equal variance. The ratio here is 1.4. We could also used an F test to compare two variances and obtained an non-significant p-value.
+```{r, echo=F}
+var.test(x = Year.2018$Fant.Pts[Year.2018$Dome == "Y"],
+         y = Year.2018$Fant.Pts[Year.2018$Dome == "N"],
+         ratio = 1)
+```
+Like the normality test, we also get a large p-value. It is probably safe to assume equal variance. When we run the t-test below, we are going to use Welch's two-sample t-test. This variation of the t-test is used when we don't want to assume equal variance. It is also the default setting when usin the t.test() function in r. I decided not to change it because our conclusion is very nearly equal when running both variations of the t-test.
+
+3. **The samples are independent.** In all honesty,  I have the hardest time justifing this assumption. All of the games from our sample are from the same NFL season. I can definitely see a situation where Matt Ryan's performance in one game could effect his performance in a subsequent game. An injury that lingers from week to week is a good example of something that would effect subsequent games. On the other hand, NFL games are mostly played a week apart. Also, with the exception of the 3 division oponents, an NFL team won't play the same team twice. Even then, the two games against division oponents are played at different locations. I think I can continue with this assumption.
+
+
+Let's test!
+```{r, echo=F}
+# Perform two sample t-test using RANTDRC:
+
+# Researched question: Does Matt Ryan score more points on average in indoor stadiums than outdoors stadiums.
+
+# Alternative hypothesis: The true difference between mean fantasy points scored indoors and mean fantasy points outdoors is greater than zero.
+
+# Null hypothesis: The true difference between mean fantasy points scored indoors and mean fantasy points outdoors is not greater than zero.
+
+# Test statistic: t
+
+# Distribution of test statistic under the null hypothesis: t with n-2 = 14 degrees of freedom.
+
+# Results: t = 0.90571, p-value = 0.1902
+
+# Conclusion: The true difference between mean fantasy points scored indoors and mean fantasy points outdoors is not greater than zero. 
+
+t.test(Fant.Pts ~ Dome, data = Year.2018, alternative = "greater")
+```
+
+From the output of the t-test function, we conclude that the Matt Ryan's average fantasy score indoors is not significantly greater than his average fantasy score outdoors in 2018. I don't think this is a surprising conclusion given what we saw in the box plot. The difference in average fantasy points is just not that big, especially when we consider the variability between Ryan's scores.
+
+## The nonparametric test:
+
+In the t-test peformed above, we discussed whether we believe some assumptions about our data were true. I felt like we were probably OK to perform the t-test but we do have options if we don't think our data meet those assumptions. Enter nonparametric methods. 
+
+The cool thing about using nonparametric methods is that we don't have the burden of meeting all those assumptions like before. Instead, all we need is that the data is continuous. That is, it can take on any value not just discrete values. That is a pretty easy assumption to check off in this example because fantasy points can take on any value. Unfortunately, like most things in life, the pros are balanced by the cons. If the assumptions we discussed before are met, a parametric test is better at detecting a effect than a nonparametric test.  However, it's pretty difficult to screw up a nonparametric test by making an incorrent assumption. One reason I enjoy using nonparamtric tests is that there are fairly easy to understand and therefore easy to explain to an audiance that probably doesn't remember that intro to statistics class they took freshmen year. 
+
+For this example, we'll perform a two-sample permutation test to compare the difference of two means. For this test, we'll pretend that the label of "indoors" and "outdoors" is arbitrary. We're pretending that it is just as likely that Matt Ryan scored those fantasy points indoors than he did outdoors. The test is performed using these steps:
+
+1. Calculate every possible combination of "indoors" and "outdoors" labels for all 16 games from 2018. It turns out there are 11,440 possible combinations. 
+
+2. For every combination calculated in step 1, calculate the diffence between the mean fantasy scores for games played indoors and games played ourdoors.
+
+3. After we have all of these differenced means, we'll compare them to what Matt Ryan actually did in 2018 and see if it was a rare event. If it was a rare event, we conclude that Matt Ryan did perform better indoors. If not, we conclude that we didn't find anything interesting.
+
+Let's perform our test.
+
+```{r, echo=F}
+# 1. Observed test statistic:
+Obs_Test <- mean(Year.2018$Fant.Pts[Year.2018$Dome == "Y"]) - mean(Year.2018$Fant.Pts[Year.2018$Dome == "N"])
+
+# 2. Obtain all possible indoor and outdoor combinations:
+Treat_Assign <- combinations(16, 9, 1:16)
+
+# Compute test statistic for each combination:
+N <- dim(Treat_Assign)[1]
+Test_Stat <- rep(0, N)
+for(i in 1:N){
+  Test_Stat[i] <- mean(Year.2018$Fant.Pts[Treat_Assign[i, ]]) - mean(Year.2018$Fant.Pts[-Treat_Assign[i, ]])
 }
 
-print(a)
+# 4. Compare observed test statistic to the permutation dist'n:
 
-# for loop solution #2
+ggplot() + 
+  geom_histogram(aes(x = Test_Stat), 
+                 binwidth = 1, 
+                 color = "#000000", 
+                 fill = "white",
+                 size = 1) +
+  
+  geom_vline(xintercept = Obs_Test, 
+             color = "#a71930", 
+             linetype = "dashed", size = 1) +
+  
+  annotate("text", label = "Observed = 3.7 ", 
+           x =  3.7, 
+           y = 200, 
+           hjust = 0, 
+           vjust = -0.8,
+           angle = 90,
+           color = "#a71930",
+           size = 4) + 
+  
+  labs(title = "Permutation Distribution of differenced means",
+       y = "Count",
+       x = "Difference of means")
 
-a<-c() #create empty variable using combine command
-for (i in 1:100){
-  a<-c(a,i) # keeps combining a with itself and the new number in i
-}
-print(a)
-
-# seq solution
-a <- seq(1,100,1) # look up help for seq using ?seq() in console
-print(a)
-
+# 5. Compute p-value:
+mean(Test_Stat >=  Obs_Test)
 ```
 
-# Replace this with problem 4
 
-And keep going. Try to solve the problems with different scripts that provide the same solution. Good luck, Happy coding.
+The results show that we did not witness a rare event in 2018. In order to say we have evidence that Matt Ryan scored more points indoors than he did outdoors we would want to see a p-value of about 0.10 or smaller. We obtained a p-value of about 0.20 so we conclude that we do not have evidence to conclude that Matt Ryan performed better indoors than he did outdoors in 2018.
+
+# Conclusion
+Using proper wording to state our conclusion, we would say that we did not find evidence to suggest that Matt Ryan's true average fantasy points score indoors is greater than his true average fantasy points score outdoors. If we just look at the data and the spread of Matt Ryan's scores I don't think this is a surprising conclusion. Matt Ryan had games where he scored seven and eight points while also having a 30 and a 40 point game. A large majority of his scores were between 19 and 28 points. An average difference of 3.7 points is just not that much.
+
+
+
+# TL;DR
+After performing a t-test and it's nonparametric counterpart, we find that Matt Ryan did not really score more points indoors compared to outdoors in 2018.
+
+
+
